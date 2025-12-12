@@ -1,0 +1,6 @@
+resource_group_name = "aca-demo-rg"
+project_name        = "acadocker"
+container_app_name  = "my-container-app"
+dockerhub_username  = "yourdockerhubusername"
+image_name          = "yourimagename"
+location            = "eastus"
