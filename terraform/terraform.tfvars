@@ -1,6 +1,6 @@
 resource_group_name = "aca-demo-rg"
 project_name        = "acadocker"
 container_app_name  = "my-container-app"
-dockerhub_username  = "yourdockerhubusername"
-image_name          = "yourimagename"
+dockerhub_username  = "ramakrishna1359"
+image_name          = "Azure_container"
 location            = "eastus"
