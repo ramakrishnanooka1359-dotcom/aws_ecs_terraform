@@ -1,4 +1,4 @@
-name: Destroy Terraform Environment
+name: Destroy Terraform Environment (Azure)
 
 on:
   workflow_dispatch:
@@ -13,48 +13,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout Code
       - name: 📥 Checkout Repository
         uses: actions/checkout@v3
-        with:
-          ref: master
-          fetch-depth: 1
 
-      - name: 🔑 Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      # Azure Login
+      - name: 🔑 Azure Login
+        uses: azure/login@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # Setup Terraform
       - name: ⚙️ Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.4.2
 
+      # Terraform Init
       - name: 📌 Terraform Init
         working-directory: ./terraform
         run: terraform init -input=false
-        env:
-          TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: ⚠️ Confirm Destroy Action
+      # Confirm destroy
+      - name: ⚠️ Destroy Not Confirmed
         if: github.event.inputs.destroy_confirmation != 'yes'
         run: |
-          echo "Destroy action not confirmed. Exiting..."
+          echo "Destroy not confirmed. Exiting..."
           exit 1
 
+      # Destroy Infra
       - name: 🗑️ Destroy Infrastructure
         working-directory: ./terraform
         run: terraform destroy -auto-approve
-        env:
-          TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: ✅ Confirm Success
+      - name: ✅ Destroy Success
         if: success()
         run: echo "Terraform Destroy Completed Successfully!"
 
-      - name: ❌ Capture Failure
+      - name: ❌ Destroy Failure
         if: failure()
         run: echo "Terraform Destroy Failed!" && exit 1
