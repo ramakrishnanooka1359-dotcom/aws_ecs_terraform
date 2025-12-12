@@ -1,4 +1,4 @@
-name: Apply Terraform Environment
+name: Apply Terraform Environment (Azure)
 
 on:
   workflow_dispatch:
@@ -13,51 +13,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout Code
       - name: 📥 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: 🔑 Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      # Azure Login
+      - name: 🔑 Azure Login
+        uses: azure/login@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # Setup Terraform
       - name: ⚙️ Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.4.2
 
+      # Terraform Init
       - name: 📌 Terraform Init
         working-directory: ./terraform
         run: terraform init -input=false
-        env:
-          TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      # Terraform Plan
       - name: 📋 Terraform Plan
         id: plan
         working-directory: ./terraform
-        run: |
-          terraform plan -input=false -no-color -out=tfplan
-        env:
-          TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: terraform plan -input=false -no-color -out=tfplan
 
+      # Terraform Apply
       - name: 🚀 Apply Terraform Changes
         if: github.event.inputs.apply_confirmation == 'yes'
-        id: apply
         working-directory: ./terraform
-        run: |
-          terraform apply -input=false -no-color tfplan
-        env:
-          TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: terraform apply -input=false -no-color tfplan
 
-      - name: ✅ Confirm Success
+      - name: ✅ Confirm Apply Success
         if: success()
         run: echo "Terraform Apply Completed Successfully!"
 
-      - name: ❌ Capture Failure
+      - name: ❌ Capture Apply Failure
         if: failure()
         run: echo "Terraform Apply Failed!" && exit 1
